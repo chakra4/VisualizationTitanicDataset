@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="http://d3js.org/d3.v3.min.js"></script>
+  <script src="http://dimplejs.org/dist/dimple.v2.0.0.min.js"></script>
+
+  <style>
+    path.dimple-series-0 {
+        stroke: grey;
+        stroke-width: 5;
+    }
+    path.dimple-series-1 {
+        stroke: pink;
+        stroke-width: 5;
+    }
+    path.dimple-series-2 {
+        stroke: blue;
+        stroke-width: 5;
+    }
+  </style>
+
+  <script type="text/javascript">
+  function draw_Survived_vs_Pclass(data) {
+    /*
+      D3.js setup code
+    */
+    "use strict";
+    var margin = 75,
+        width = 900 - margin,
+        height = 450 - margin;
+    var radius = 3;
+
+    //Remove the previous "svg" element
+    d3.select("svg").remove();
+
+    //Add new "svg" element
+    var svg = d3.select("body")
+        .append("svg")
+        .attr("width", width + margin)
+        .attr("height", height + margin)
+        .append('g')
+        .attr('class','chart');
+
+    /*
+      Dimple.js Chart construction code
+    */
+    var myChart = new dimple.chart(svg, data);
+    var x = myChart.addCategoryAxis("x", "Pclass");
+    x.addOrderRule(["1", "2", "3"]);
+    x.fontSize = "15px";
+    x.title = "Passenger Pclass";
+    var y = myChart.addMeasureAxis("y", "Survived");
+    y.showPercent = true;
+    y.fontSize = "15px";
+    y.title = "Percentage of Survived";
+
+    //Plot total survival percentage for each Pclass
+    var mySeries = myChart.addSeries(["Survived"], dimple.plot.line, [x,y]);
+    mySeries.aggregate = dimple.aggregateMethod.count;
+    mySeries.lineMarkers = true;
+    mySeries.getTooltipText = function (e) {
+      return ToolTipFunction(e);
+    };
+
+    //Plot female survival percentage for each Pclass
+    var mySeries1 = myChart.addSeries(["Survived"], dimple.plot.line, [x,y]);
+    mySeries1.aggregate = dimple.aggregateMethod.count;
+    mySeries1.data = dimple.filterData(data, "Sex", ["female"])
+    mySeries1.lineMarkers = true;
+    mySeries1.getTooltipText = function (e) {
+      return ToolTipFunction(e);
+    };
+
+    //Plot male survival percentage for each Pclass
+    var mySeries2 = myChart.addSeries(["Survived"], dimple.plot.line, [x,y]);
+    mySeries2.aggregate = dimple.aggregateMethod.count;
+    mySeries2.data = dimple.filterData(data, "Sex", ["male"])
+    mySeries2.lineMarkers = true;
+    mySeries2.getTooltipText = function (e) {
+      return ToolTipFunction(e);
+    };
+
+    //Removing default Legend
+    myChart.addLegend(60, 10, 500, 20, "right",[]);
+    //Make the line related to Survived=0 white
+    myChart.assignColor("0", "white", "white", 0);
+    myChart.draw();
+
+    /* Add Legend */
+    var legend = svg.append("g")
+        .attr("class", "legend")
+        .attr("transform", "translate(" + (width - 100) + "," + 60 + ")")
+        .selectAll("g")
+        .data(["Total Survived", "Female Survived", "Male Survived"])
+        .enter().append("g");
+
+    legend.append("circle")
+        .attr("cy", function(d, i) {
+             return i * 30;
+        })
+        .attr("r", function(d) {
+             return radius;
+        })
+        .attr("fill", function(d) {
+            if (d == "Total Survived") {
+                return 'grey';
+            } else if (d == "Male Survived") {
+                return 'blue';
+            } else if (d == "Female Survived") {
+                return 'pink';
+            }
+        });
+
+    legend.append("text")
+        .attr("y", function(d, i) {
+            return i * 30 + 5;
+        })
+        .attr("x", radius * 5)
+        .text(function(d) {
+            return d;
+        });
+  };
+
+  function draw_Survived_vs_Sex(data) {
+    /*
+      D3.js setup code
+    */
+    "use strict";
+    var margin = 75,
+        width = 900 - margin,
+        height = 450 - margin;
+    var radius = 3;
+
+    // Remove the previous "svg" element
+    d3.select("svg").remove();
+
+    //Add new "svg" element
+    var svg = d3.select("body")
+        .append("svg")
+          .attr("width", width + margin)
+          .attr("height", height + margin)
+        .append('g')
+          .attr('class','chart');
+
+    /*
+      Dimple.js Chart construction code
+    */
+    var myChart = new dimple.chart(svg, data);
+    var x = myChart.addCategoryAxis("x", "Sex");
+    x.addOrderRule(["Male", "Female"]);
+    x.fontSize = "15px";
+    x.title = "Passenger Sex";
+    var y = myChart.addMeasureAxis("y", "Survived");
+    y.showPercent = true;
+    y.fontSize = "15px";
+    y.title = "Percentage of Survived";
+    var mySeries = myChart.addSeries("Survived", dimple.plot.bar);
+    mySeries.aggregate = dimple.aggregateMethod.count;
+    //Customize the tooltip for a series in the chart
+    mySeries.getTooltipText = function (e) {
+      var isSurvived = "";
+      if (e.aggField[0] == 1) {
+        isSurvived = "Yes";
+      } else {
+        isSurvived = "No";
+      }
+      return [
+         "Survived: " + isSurvived,
+         "Sex: " + e.x,
+         "Percentage: " + Math.round(e.height * 100) + "%"
+      ];
+    };
+    myChart.draw();
+
+    /* Add Legend */
+    var legend = svg.append("g")
+        .attr("class", "legend")
+        .attr("transform", "translate(" + (width - 25) + "," + 60 + ")")
+        .selectAll("g")
+        .data(["Survived", "Not Survived"])
+        .enter().append("g");
+
+    legend.append("circle")
+        .attr("cy", function(d, i) {
+            return i * 30;
+        })
+        .attr("r", function(d) {
+              return radius;
+        })
+        .attr("fill", function(d) {
+            if (d == "Survived") {
+                return '#99C0DB';
+            } else if (d == "Not Survived") {
+                return '#FB998E';
+            }
+        });
+
+    legend.append("text")
+        .attr("y", function(d, i) {
+            return i * 30 + 5;
+        })
+        .attr("x", radius * 5)
+        .text(function(d) {
+             return d;
+        });
+  };
+
+  </script>
+</head>
+<body>
+  <h3>Titanic shipwrecks data analysis - Females and higher classes had higher survival rates</h3>
+  <p> The Titanic sank during her maiden voyage after colliding with an iceberg, 
+  killing 1502 out of 2224 passengers and crew. The shipwreck led to such loss of life as 
+  there were not enough lifeboats for the passengers and crew. In this analysis we find
+  survival percentage of female passengers (74%) were far more than men passengers (19%).
+  Another finding is higher class passengers had higher survival rates.
+  </p>  
+  <div>Plot 'Percentage of Survived' Vs:
+  <select id="mySelect" onchange="SelectChart()">
+    <option value="Sex">Gender
+    <option value="Pclass">Passenger Class
+  </select>
+  </div>
+  <p id="demo"></p>
+  <div id="GenderCheckBoxes">
+  <input type="checkbox" id="total_line" onclick = "TotalLine()" />Total
+  <input type="checkbox" id="male_line" onclick = "MaleLine()" />Male
+  <input type="checkbox" id="female_line" onclick = "FemaleLine()" />Female
+  </div>
+
+  <script type="text/javascript">
+  /*
+    Use D3 (not dimple.js) to load the TSV file
+    and pass the contents of it to the draw function
+    */
+  //d3.csv("titanic_data.csv", draw_Survived_vs_Pclass);
+  //d3.csv("titanic_data.csv", draw_Survived_vs_Sex);
+  d3.csv("titanic_data.csv", SelectChart);
+
+  function SelectChart(data) {
+    var x = document.getElementById("mySelect").value;
+    //document.getElementById("demo").innerHTML = "You selected: " + x;
+
+    if (x == "Sex") {
+      HideCheckBoxes();
+      d3.csv("titanic_data.csv", draw_Survived_vs_Sex);
+    } else if (x == "Pclass") {
+      SelectCheckBoxes();
+      d3.csv("titanic_data.csv", draw_Survived_vs_Pclass);
+    }
+  }
+
+  function SelectCheckBoxes() {
+    document.getElementById("GenderCheckBoxes").style.display = 'block';
+    document.getElementById("total_line").checked = true;
+    document.getElementById("male_line").checked = true;
+    document.getElementById("female_line").checked = true;
+  }
+
+  function HideCheckBoxes() {
+    document.getElementById("GenderCheckBoxes").style.display = 'none';
+  }
+
+  function TotalLine() {
+    if (document.getElementById("total_line").checked == false) {
+      d3.select('.dimple-series-0').style('display','none');
+    } else if (document.getElementById("total_line").checked == true) {
+      d3.select('.dimple-series-0').style('display','block');
+    }
+  }
+
+  function FemaleLine() {
+    if (document.getElementById("female_line").checked == false) {
+      d3.select('.dimple-series-1').style('display','none');
+    } else if (document.getElementById("female_line").checked == true) {
+      d3.select('.dimple-series-1').style('display','block');
+    }
+  }
+
+  function MaleLine() {
+    if (document.getElementById("male_line").checked == false) {
+      d3.select('.dimple-series-2').style('display','none');
+    } else if (document.getElementById("male_line").checked == true) {
+      d3.select('.dimple-series-2').style('display','block');
+    }
+  }
+
+  //Customizes the tooltip of a series in a chart
+  function ToolTipFunction(e) {
+    var isSurvived = "";
+    if (e.aggField[0] == 1) {
+      isSurvived = "Yes";
+    } else {
+      isSurvived = "No";
+    }
+    return [
+      "Survived: " + isSurvived,
+      "Passenger class: " + e.x,
+      "Percentage: " + Math.round(e.height * 100) + "%"
+    ];
+  };
+  </script>
+
+</body>
+</html>
